@@ -14,7 +14,7 @@ const io     = new Server(server);
 const ADMIN_USER  = 'noone';
 const ADMIN_PASS  = 'NEONGUN';
 const ADMIN_EMAIL = 'newnoonehell@gmail.com';
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const db = new sqlite3.Database('./game.db');
 db.serialize(() => {
