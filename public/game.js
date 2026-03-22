@@ -1,4 +1,3 @@
-// ── TILE / PROP DEFINITIONS ───────────────────────────────────────────────────
 const TILE_DEFS = {
   floor:    {cat:'FLOOR',  file:'floor.png',    solid:false,w:1,h:1,color:'#3a3a2a'},
   floor1:   {cat:'FLOOR',  file:'floor1.png',   solid:false,w:1,h:1,color:'#2e3a3a'},
@@ -28,23 +27,22 @@ const PROP_DEFS = {
   Door1:    {file:'Door1.png',    w:1,h:2,color:'#8B5E3C'},
   Door2:    {file:'Door2.png',    w:2,h:2,color:'#6B4E3C'},
   Box1:     {file:'Box1.png',     w:1,h:1,color:'#C8843C'},
-  BoxPile1: {file:'BoxPile1.png', w:1,h:2,color:'#B8743C', natW:32, natH:50},
+  // offsetY: extra pixels to shift sprite DOWN so it sits on the floor correctly
+  BoxPile1: {file:'BoxPile1.png', w:1,h:2,color:'#B8743C', natW:32,natH:50, offsetY:14},
   Locker1:  {file:'Locker1.png',  w:1,h:2,color:'#aaaaaa'},
   Locker2:  {file:'Locker2.png',  w:1,h:2,color:'#C8843C'},
-  Locker3:  {file:'Locker3.png',  w:1,h:2,color:'#888888', natW:32, natH:80},
-  Table:    {file:'Table.png',    w:2,h:1,color:'#C8A050', natW:80, natH:48},
+  Locker3:  {file:'Locker3.png',  w:1,h:2,color:'#888888', natW:32,natH:80},
+  Table:    {file:'Table.png',    w:2,h:1,color:'#C8A050', natW:80,natH:48},
 };
 
-// SPRITE_SCALE: player + prop sprites drawn at natural pixel size × this.
-// 1 = exact pixel size. Bump up if your sprites are very small.
-const SPRITE_SCALE = 1;
-const TILE_SIZE    = 32; // 16px sprite × 2 (Scratch halves dimensions) = 32
-const PLAYER_W     = 26; // actual sprite width  (13 × 2)
-const PLAYER_H     = 52; // actual sprite height (26 × 2)
-const PLAYER_SPEED = 2.5;
-const CHAT_FADE_MS = 6000;
-const CHAT_MAX     = 80;
-
+const SPRITE_SCALE   = 1;
+const TILE_SIZE      = 32;
+const PLAYER_W       = 26;
+const PLAYER_H       = 52;
+// Target speed in pixels per second — frame-rate independent
+const PLAYER_PX_PER_SEC = 120;
+const CHAT_FADE_MS   = 6000;
+const CHAT_MAX       = 80;
 const PLAYER_SPRITES = ['player1','player2','player3','player4','player5'];
 
 const canvas = document.getElementById('gameCanvas');
@@ -60,7 +58,7 @@ function setPixelPerfect(c){
 const socket = io();
 
 let myUsername    = '';
-let mySprite      = localStorage.getItem('playerSprite')||'player1';
+let mySprite      = localStorage.getItem('playerSprite') || 'player1';
 let me            = null;
 let players       = {};
 let mapTiles      = [];
@@ -75,13 +73,11 @@ let chatInputVal  = '';
 let chatLog       = [];
 let tileImages    = {};
 let propImages    = {};
-let spriteImages  = {};  // 'player1' → HTMLImageElement
-let camX=0,camY=0;
-let worldW=800,worldH=600;
-
-// ── SCREEN STATE ──────────────────────────────────────────────────────────────
-// 'color' = color picker, 'game' = playing
+let spriteImages  = {};
+let camX=0, camY=0;
+let worldW=800, worldH=600;
 let screen = 'color';
+let lastTick = 0; // for delta-time movement
 
 // ── IMAGE LOADING ─────────────────────────────────────────────────────────────
 function loadImage(src){
@@ -92,7 +88,6 @@ function loadImage(src){
     img.src=src;
   });
 }
-
 async function preloadAll(tiles,props){
   for(const t of tiles){
     if(tileImages[t.tile]!==undefined) continue;
@@ -105,55 +100,24 @@ async function preloadAll(tiles,props){
     propImages[p.tile]=def?await loadImage(`/assets/${def.file}`):null;
   }
 }
-
 async function preloadSprites(){
   for(const name of PLAYER_SPRITES){
     spriteImages[name]=await loadImage(`/assets/${name}.png`);
   }
 }
 
-// Sprite drawn at natural size × SPRITE_SCALE, not stretched to cell
-function drawSpriteNatural(img,px,py,fallbackW,fallbackH,flipX){
-  if(!img){
-    ctx.fillStyle='#888';ctx.fillRect(px,py,fallbackW,fallbackH);return;
-  }
-  const dw=img.naturalWidth*SPRITE_SCALE;
-  const dh=img.naturalHeight*SPRITE_SCALE;
-  ctx.save();
-  if(flipX){ctx.translate(px+dw,py);ctx.scale(-1,1);ctx.drawImage(img,0,0,dw,dh);}
-  else ctx.drawImage(img,px,py,dw,dh);
-  ctx.restore();
+// ── FALLBACKS ─────────────────────────────────────────────────────────────────
+function drawFallbackRect(px,py,pw,ph,color,label){
+  ctx.fillStyle=color||'#444';ctx.fillRect(px,py,pw,ph);
+  ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;
+  ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
+  ctx.font='8px monospace';ctx.fillStyle='rgba(255,255,255,0.28)';
+  ctx.textAlign='center';ctx.fillText(label||'',px+pw/2,py+ph/2+3);ctx.textAlign='left';
 }
-
-// Tile sprites: drawn to fill the grid cell exactly (tiles should tile cleanly)
-function drawTileSprite(img,px,py,pw,ph,color,label){
-  if(img){ctx.drawImage(img,px,py,pw,ph);}
-  else{
-    ctx.fillStyle=color||'#444';ctx.fillRect(px,py,pw,ph);
-    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
-    ctx.font='8px monospace';ctx.fillStyle='rgba(255,255,255,0.28)';
-    ctx.textAlign='center';ctx.fillText(label||'',px+pw/2,py+ph/2+3);ctx.textAlign='left';
-  }
-}
-
-function drawPropSprite(img,px,py,def,label){
-  // Use explicit nat dimensions if provided, else trust the image, else fall back to grid size
-  const dw = def.natW ? def.natW*SPRITE_SCALE
-           : (img && img.naturalWidth>0) ? img.naturalWidth*SPRITE_SCALE
-           : def.w*TILE_SIZE;
-  const dh = def.natH ? def.natH*SPRITE_SCALE
-           : (img && img.naturalHeight>0) ? img.naturalHeight*SPRITE_SCALE
-           : def.h*TILE_SIZE;
-  if(img && img.naturalWidth > 0){
-    ctx.drawImage(img, px, py, dw, dh);
-  } else {
-    ctx.fillStyle=def.color||'#666';
-    ctx.fillRect(px,py,dw,dh);
-    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;
-    ctx.strokeRect(px+.5,py+.5,dw-1,dh-1);
-    ctx.font='8px monospace';ctx.fillStyle='rgba(255,255,255,0.28)';
-    ctx.textAlign='center';ctx.fillText(label||'',px+dw/2,py+dh/2+3);ctx.textAlign='left';
-  }
+function drawFallbackPlayer(px,py,col){
+  ctx.fillStyle=col;ctx.fillRect(px+4,py+14,PLAYER_W-8,PLAYER_H-14);
+  ctx.fillStyle='#ffddaa';ctx.fillRect(px+8,py+2,PLAYER_W-16,14);
+  ctx.fillStyle='#333';ctx.fillRect(px+10,py+6,3,3);ctx.fillRect(px+19,py+6,3,3);
 }
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
@@ -162,7 +126,8 @@ async function loadMap(){
   await applyMap(d);return d;
 }
 async function applyMap(d){
-  mapTiles=d.data||[];mapProps=d.props||[];entityColliders=d.entityColliders||{};
+  mapTiles=d.data||[];mapProps=d.props||[];
+  entityColliders=d.entityColliders||{};
   await preloadAll(mapTiles,mapProps);
   computeWorldSize();buildSolids();
 }
@@ -178,12 +143,29 @@ function computeWorldSize(){
 }
 function buildSolids(){
   allSolids=[];
+  // Tile-based solid colliders
   mapTiles.forEach(t=>{
     const def=TILE_DEFS[t.tile];if(!def||!def.solid) return;
     allSolids.push({x:t.col*TILE_SIZE,y:t.row*TILE_SIZE,w:def.w*TILE_SIZE,h:def.h*TILE_SIZE});
   });
-  allSolids._playerBoxes=(entityColliders['player']&&entityColliders['player'].length)
-    ?entityColliders['player']:[{x:4,y:14,w:PLAYER_W-8,h:PLAYER_H-14}];
+  // Entity colliders for props — placed at each prop's position + box offset
+  mapProps.forEach(p=>{
+    const def=PROP_DEFS[p.tile];if(!def) return;
+    const boxes=entityColliders[p.tile];
+    if(boxes&&boxes.length){
+      boxes.forEach(box=>{
+        allSolids.push({
+          x: p.col*TILE_SIZE + box.x,
+          y: p.row*TILE_SIZE + box.y,
+          w: box.w, h: box.h
+        });
+      });
+    }
+  });
+  // Player collision boxes
+  allSolids._playerBoxes = (entityColliders['player']&&entityColliders['player'].length)
+    ? entityColliders['player']
+    : [{x:0, y:PLAYER_H-16, w:PLAYER_W, h:16}]; // feet-only default
 }
 
 // ── CAMERA ────────────────────────────────────────────────────────────────────
@@ -213,7 +195,7 @@ function tryMove(px,py,dx,dy){
   return{x:canX?nx:px,y:canY?ny:py,moved:canX||canY};
 }
 
-// ── DRAW MAP ──────────────────────────────────────────────────────────────────
+// ── DRAW TILES ────────────────────────────────────────────────────────────────
 function drawTileLayer(){
   ['FLOOR','BORDER','WALL'].forEach(cat=>{
     mapTiles.filter(t=>TILE_DEFS[t.tile]?.cat===cat).forEach(t=>{
@@ -222,26 +204,33 @@ function drawTileLayer(){
       const py=Math.round(t.row*TILE_SIZE-camY);
       const pw=def.w*TILE_SIZE,ph=def.h*TILE_SIZE;
       if(px+pw<0||py+ph<0||px>canvas.width||py>canvas.height) return;
-      drawTileSprite(tileImages[t.tile],px,py,pw,ph,def.color,t.tile);
+      const img=tileImages[t.tile];
+      if(img) ctx.drawImage(img,px,py,pw,ph);
+      else drawFallbackRect(px,py,pw,ph,def.color,t.tile);
     });
   });
 }
 
+// ── DRAW PROPS + PLAYERS (Y-sorted) ──────────────────────────────────────────
 function drawPropsAndPlayers(){
   const items=[];
   mapProps.forEach(p=>{
     const def=PROP_DEFS[p.tile];if(!def) return;
     const img=propImages[p.tile];
-    const drawnH = def.natH ? def.natH*SPRITE_SCALE
-                 : (img && img.naturalHeight>0) ? img.naturalHeight*SPRITE_SCALE
-                 : def.h*TILE_SIZE;
-    const drawnW = def.natW ? def.natW*SPRITE_SCALE
-                 : (img && img.naturalWidth>0) ? img.naturalWidth*SPRITE_SCALE
-                 : def.w*TILE_SIZE;
-    const px=Math.round(p.col*TILE_SIZE-camX);
-    const py=Math.round(p.row*TILE_SIZE-camY);
-    if(px+drawnW<0||py+drawnH<0||px>canvas.width||py>canvas.height) return;
-    items.push({sortY:p.row*TILE_SIZE+drawnH,draw:()=>drawPropSprite(img,px,py,def,p.tile)});
+    const dw=def.natW?def.natW*SPRITE_SCALE:(img&&img.naturalWidth>0?img.naturalWidth*SPRITE_SCALE:def.w*TILE_SIZE);
+    const dh=def.natH?def.natH*SPRITE_SCALE:(img&&img.naturalHeight>0?img.naturalHeight*SPRITE_SCALE:def.h*TILE_SIZE);
+    const baseX=Math.round(p.col*TILE_SIZE-camX);
+    const baseY=Math.round(p.row*TILE_SIZE-camY);
+    // offsetY shifts the sprite down so feet land on the grid
+    const drawY=baseY+(def.offsetY||0);
+    if(baseX+dw<0||drawY+dh<0||baseX>canvas.width||drawY>canvas.height) return;
+    items.push({
+      sortY: p.row*TILE_SIZE+dh+(def.offsetY||0),
+      draw:()=>{
+        if(img&&img.naturalWidth>0) ctx.drawImage(img,baseX,drawY,dw,dh);
+        else drawFallbackRect(baseX,drawY,dw,dh,def.color,p.tile);
+      }
+    });
   });
   Object.values(players).forEach(p=>{
     items.push({sortY:p.y+PLAYER_H,draw:()=>drawPlayer(p,false)});
@@ -254,7 +243,14 @@ function drawPlayer(p,isSelf){
   const px=Math.round(p.x-camX),py=Math.round(p.y-camY);
   const now=Date.now();
   const img=spriteImages[p.sprite||'player1'];
-  drawSpriteNatural(img,px,py,PLAYER_W,PLAYER_H,p.facingLeft);
+  if(img&&img.naturalWidth>0){
+    ctx.save();
+    if(p.facingLeft){ctx.translate(px+PLAYER_W,py);ctx.scale(-1,1);ctx.drawImage(img,0,0,PLAYER_W,PLAYER_H);}
+    else ctx.drawImage(img,px,py,PLAYER_W,PLAYER_H);
+    ctx.restore();
+  } else {
+    drawFallbackPlayer(px,py,isSelf?'#00ffe7':'#ff4f7b');
+  }
 
   // Name tag
   ctx.font='bold 10px monospace';ctx.textAlign='center';
@@ -263,20 +259,20 @@ function drawPlayer(p,isSelf){
   ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(cx-tw/2-3,py-17,tw+6,13);
   ctx.fillStyle=isSelf?'#00ffe7':'#fff';ctx.fillText(p.username,cx,py-6);
 
-  // Chat bubble — wraps long text
+  // Chat bubble
   if(p.chatMsg&&p.chatTime){
     const age=now-p.chatTime;
     if(age<CHAT_FADE_MS){
       const alpha=age>CHAT_FADE_MS-1000?1-(age-(CHAT_FADE_MS-1000))/1000:1;
       ctx.save();ctx.globalAlpha=alpha;
-      drawWrappedBubble(p.chatMsg,cx,py-44,200);
+      drawWrappedBubble(p.chatMsg,cx,py-20,180);
       ctx.restore();
     } else {p.chatMsg=null;}
   }
   ctx.textAlign='left';
 }
 
-// Wraps text into multiple lines inside a bubble above the player
+// Word-wrap bubble — text stays inside the box
 function drawWrappedBubble(text,cx,bottomY,maxW){
   ctx.font='10px monospace';
   const words=text.split(' ');
@@ -284,18 +280,27 @@ function drawWrappedBubble(text,cx,bottomY,maxW){
   let line='';
   for(const w of words){
     const test=line?line+' '+w:w;
-    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}
+    if(ctx.measureText(test).width>maxW-10&&line){lines.push(line);line=w;}
     else line=test;
   }
   if(line) lines.push(line);
-  const lh=14,pad=5;
-  const bw=Math.min(maxW,Math.max(...lines.map(l=>ctx.measureText(l).width)))+pad*2;
+
+  const lh=13,pad=5;
+  // Measure actual widest line
+  const maxLineW=Math.max(...lines.map(l=>ctx.measureText(l).width));
+  const bw=Math.min(maxLineW+pad*2,maxW);
   const bh=lines.length*lh+pad*2;
-  const bx=cx-bw/2,by=bottomY-bh;
-  ctx.fillStyle='rgba(0,0,0,0.65)';
+  const bx=cx-bw/2;
+  const by=bottomY-bh;
+
+  ctx.fillStyle='rgba(0,0,0,0.7)';
   rrect(bx,by,bw,bh,4);ctx.fill();
   ctx.fillStyle='#fff';
-  lines.forEach((l,i)=>ctx.fillText(l,bx+pad,by+pad+lh*(i+1)-2));
+  // Draw each line clipped inside the box
+  ctx.save();
+  ctx.beginPath();ctx.rect(bx+pad,by,bw-pad*2,bh);ctx.clip();
+  lines.forEach((l,i)=>ctx.fillText(l,bx+pad,by+pad+lh*(i+1)-1));
+  ctx.restore();
 }
 
 function rrect(x,y,w,h,r){
@@ -309,118 +314,121 @@ function rrect(x,y,w,h,r){
 // ── CHAT OVERLAY ──────────────────────────────────────────────────────────────
 function drawChatOverlay(){
   const now=Date.now();
-  const OX=14,maxW=Math.min(300,canvas.width-28);
+  const OX=14;
+  const maxW=Math.min(320,canvas.width-28);
   const visible=chatOpen?chatLog.slice(-8):chatLog.filter(m=>now-m.time<12000).slice(-4);
   if(!chatOpen&&visible.length===0) return;
 
   ctx.save();
-  // Measure all lines first to know total height
   ctx.font='11px monospace';
+
+  // Each message: wrap to multiple lines if needed
   const rendered=visible.map(m=>{
     const who=m.username+': ';
-    return{who,msg:m.msg,alpha:chatOpen?0.9:Math.max(0,1-(now-m.time-8000)/4000)};
+    const whoW=ctx.measureText(who).width;
+    const availW=maxW-whoW-10;
+    // Word-wrap message part
+    const words=m.msg.split(' ');
+    const lines=[];let line='';
+    for(const w of words){
+      const test=line?line+' '+w:w;
+      if(ctx.measureText(test).width>availW&&line){lines.push(line);line=w;}
+      else line=test;
+    }
+    if(line) lines.push(line);
+    const alpha=chatOpen?0.9:Math.max(0,1-(now-m.time-8000)/4000);
+    return{who,whoW,lines,alpha,totalH:lines.length*15+4};
   });
 
   // Draw from bottom up
   let y=canvas.height-60;
-  if(chatOpen) y-=24; // leave room for input box
+  if(chatOpen) y-=28;
   for(let i=rendered.length-1;i>=0;i--){
-    const{who,msg,alpha}=rendered[i];
+    const{who,whoW,lines,alpha,totalH}=rendered[i];
     ctx.globalAlpha=Math.max(0,alpha);
-    const whoW=ctx.measureText(who).width;
-    const fw=Math.min(ctx.measureText(who+msg).width,maxW)+10;
-    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(OX-2,y-12,fw,15);
-    ctx.fillStyle='#00ffe7';ctx.fillText(who,OX,y);
-    // Clip long message text
+    y-=totalH;
+    // Background
+    const lineW=Math.max(...lines.map(l=>ctx.measureText(l).width));
+    const bgW=Math.min(whoW+lineW+12,maxW+4);
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(OX-2,y,bgW,totalH);
+    // Username
+    ctx.fillStyle='#00ffe7';ctx.fillText(who,OX,y+13);
+    // Message lines
+    ctx.fillStyle='#fff';
     ctx.save();
-    ctx.beginPath();ctx.rect(OX+whoW,y-12,maxW-whoW,15);ctx.clip();
-    ctx.fillStyle='#fff';ctx.fillText(msg,OX+whoW,y);
+    ctx.beginPath();ctx.rect(OX+whoW,y,maxW-whoW,totalH+2);ctx.clip();
+    lines.forEach((l,li)=>ctx.fillText(l,OX+whoW,y+13+li*15));
     ctx.restore();
-    y-=17;
   }
 
+  // Input box
   if(chatOpen){
     ctx.globalAlpha=0.95;
     const IY=canvas.height-36;
-    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(OX-2,IY-14,maxW,20);
-    ctx.strokeStyle='#00ffe7';ctx.lineWidth=1;ctx.strokeRect(OX-2,IY-14,maxW,20);
+    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(OX-2,IY-16,maxW,22);
+    ctx.strokeStyle='#00ffe7';ctx.lineWidth=1;ctx.strokeRect(OX-2,IY-16,maxW,22);
+    // Show typing text — scroll from right if too long
+    ctx.font='11px monospace';
+    const prefix='> ';
     const cursor=Math.floor(Date.now()/500)%2===0?'|':'';
-    // Clip input text if too long
-    ctx.save();ctx.beginPath();ctx.rect(OX+2,IY-13,maxW-40,18);ctx.clip();
-    ctx.fillStyle='#00ffe7';ctx.font='11px monospace';ctx.fillText('> '+chatInputVal+cursor,OX+2,IY);
+    const fullText=prefix+chatInputVal+cursor;
+    const fullW=ctx.measureText(fullText).width;
+    const boxW=maxW-30;
+    ctx.save();
+    ctx.beginPath();ctx.rect(OX+2,IY-15,boxW,20);ctx.clip();
+    // If text wider than box, align right so newest chars visible
+    const textX=fullW>boxW?OX+2+boxW-fullW:OX+2;
+    ctx.fillStyle='#00ffe7';ctx.fillText(fullText,textX,IY);
     ctx.restore();
+    // Char count
     ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px monospace';ctx.textAlign='right';
     ctx.fillText(`${chatInputVal.length}/${CHAT_MAX}`,OX+maxW-4,IY);ctx.textAlign='left';
   }
   ctx.restore();
 }
 
-// ── COLOR PICKER SCREEN ───────────────────────────────────────────────────────
-let colorPickerLoaded=false;
+// ── COLOR PICKER ──────────────────────────────────────────────────────────────
 function drawColorScreen(){
   ctx.fillStyle='#07070f';ctx.fillRect(0,0,canvas.width,canvas.height);
   setPixelPerfect();
-
-  // Grid BG
   ctx.strokeStyle='rgba(0,255,231,0.04)';ctx.lineWidth=1;
-  for(let x=0;x<canvas.width;x+=40) {ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
   for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
 
   const cx=canvas.width/2;
-
-  // Title
-  ctx.font='bold 18px Orbitron, monospace';ctx.fillStyle='#00ffe7';ctx.textAlign='center';
+  ctx.font='bold 18px Orbitron,monospace';ctx.fillStyle='#00ffe7';ctx.textAlign='center';
   ctx.fillText('CHOOSE YOUR CHARACTER',cx,60);
   ctx.font='11px monospace';ctx.fillStyle='#445566';
   ctx.fillText('select a sprite to play as',cx,82);
 
-  const spriteW=40,spriteH=60;
-  const gap=24;
+  const spriteW=40,spriteH=60,gap=24;
   const totalW=PLAYER_SPRITES.length*(spriteW+gap)-gap;
   const startX=cx-totalW/2;
   const sprY=canvas.height/2-spriteH/2-10;
 
   PLAYER_SPRITES.forEach((name,i)=>{
     const sx=startX+i*(spriteW+gap);
-    const isSelected=name===mySprite;
-
-    // Card bg
-    ctx.fillStyle=isSelected?'rgba(0,255,231,0.12)':'rgba(255,255,255,0.04)';
-    ctx.strokeStyle=isSelected?'#00ffe7':'rgba(255,255,255,0.1)';
-    ctx.lineWidth=isSelected?2:1;
-    rrect(sx-8,sprY-10,spriteW+16,spriteH+36,6);
-    ctx.fill();ctx.stroke();
-
-    // Sprite
+    const isSel=name===mySprite;
+    ctx.fillStyle=isSel?'rgba(0,255,231,0.12)':'rgba(255,255,255,0.04)';
+    ctx.strokeStyle=isSel?'#00ffe7':'rgba(255,255,255,0.1)';
+    ctx.lineWidth=isSel?2:1;
+    rrect(sx-8,sprY-10,spriteW+16,spriteH+36,6);ctx.fill();ctx.stroke();
     const img=spriteImages[name];
-    if(img){ctx.drawImage(img,sx,sprY,spriteW,spriteH);}
-    else{
-      ctx.fillStyle='#333';ctx.fillRect(sx,sprY,spriteW,spriteH);
-      ctx.font='8px monospace';ctx.fillStyle='#666';ctx.textAlign='center';
-      ctx.fillText(name,sx+spriteW/2,sprY+spriteH/2+3);ctx.textAlign='left';
-    }
-
-    // Label
-    ctx.font=isSelected?'bold 10px monospace':'10px monospace';
-    ctx.fillStyle=isSelected?'#00ffe7':'#c8d8e8';ctx.textAlign='center';
+    if(img)ctx.drawImage(img,sx,sprY,spriteW,spriteH);
+    else{ctx.fillStyle='#333';ctx.fillRect(sx,sprY,spriteW,spriteH);}
+    ctx.font=isSel?'bold 10px monospace':'10px monospace';
+    ctx.fillStyle=isSel?'#00ffe7':'#c8d8e8';ctx.textAlign='center';
     ctx.fillText(name,sx+spriteW/2,sprY+spriteH+16);
-
-    if(isSelected){
-      ctx.font='8px monospace';ctx.fillStyle='#00ffe7';
-      ctx.fillText('▲ SELECTED',sx+spriteW/2,sprY+spriteH+28);
-    }
+    if(isSel){ctx.font='8px monospace';ctx.fillStyle='#00ffe7';ctx.fillText('▲ SELECTED',sx+spriteW/2,sprY+spriteH+28);}
     ctx.textAlign='left';
   });
 
-  // Play button
-  const btnW=160,btnH=40,btnX=cx-btnW/2,btnY=sprY+spriteH+60;
-  ctx.fillStyle='rgba(0,255,231,0.1)';
-  ctx.strokeStyle='#00ffe7';ctx.lineWidth=2;
+  const btnW=160,btnH=40,btnX=cx-80,btnY=sprY+spriteH+60;
+  ctx.fillStyle='rgba(0,255,231,0.1)';ctx.strokeStyle='#00ffe7';ctx.lineWidth=2;
   rrect(btnX,btnY,btnW,btnH,6);ctx.fill();ctx.stroke();
-  ctx.font='bold 13px Orbitron, monospace';ctx.fillStyle='#00ffe7';ctx.textAlign='center';
+  ctx.font='bold 13px Orbitron,monospace';ctx.fillStyle='#00ffe7';ctx.textAlign='center';
   ctx.fillText('ENTER WORLD',cx,btnY+26);ctx.textAlign='left';
 
-  // Store clickable areas for mouse/touch
   canvas._colorPicker={sprites:[],btn:{x:btnX,y:btnY,w:btnW,h:btnH}};
   PLAYER_SPRITES.forEach((name,i)=>{
     const sx=startX+i*(spriteW+gap);
@@ -430,19 +438,13 @@ function drawColorScreen(){
 
 function handleColorPickerClick(px,py){
   const cp=canvas._colorPicker;if(!cp) return;
-  // Check sprite cards
   for(const s of cp.sprites){
     if(px>=s.x&&px<=s.x+s.w&&py>=s.y&&py<=s.y+s.h){
-      mySprite=s.name;
-      localStorage.setItem('playerSprite',mySprite);
-      return;
+      mySprite=s.name;localStorage.setItem('playerSprite',mySprite);return;
     }
   }
-  // Check play button
   const b=cp.btn;
-  if(px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h){
-    enterGame();
-  }
+  if(px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h) enterGame();
 }
 
 function enterGame(){
@@ -450,22 +452,18 @@ function enterGame(){
   socket.emit('join',myUsername,mySprite);
 }
 
-// ── GAME LOOP ─────────────────────────────────────────────────────────────────
-function resize(){
-  canvas.width=window.innerWidth;
-  canvas.height=window.innerHeight;
-  setPixelPerfect();
-}
+// ── GAME LOOP (delta-time so speed is frame-rate independent) ─────────────────
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;setPixelPerfect();}
 
-function tick(){
+function tick(now){
   requestAnimationFrame(tick);
-
-  if(screen==='color'){
-    drawColorScreen();
-    return;
-  }
-
+  if(screen==='color'){drawColorScreen();return;}
   if(!me) return;
+
+  // Delta time in seconds, capped to prevent huge jumps after tab switch
+  const dt=Math.min((now-lastTick)/1000, 0.05);
+  lastTick=now;
+  const spd=PLAYER_PX_PER_SEC*dt;
 
   if(!chatOpen){
     let dx=0,dy=0;
@@ -473,10 +471,10 @@ function tick(){
     const R=keys['ArrowRight']||keys['d']||keys['D']||mobileKeys.right;
     const U=keys['ArrowUp']   ||keys['w']||keys['W']||mobileKeys.up;
     const D=keys['ArrowDown'] ||keys['s']||keys['S']||mobileKeys.down;
-    if(L){dx-=PLAYER_SPEED;me.facingLeft=true;}
-    if(R){dx+=PLAYER_SPEED;me.facingLeft=false;}
-    if(U) dy-=PLAYER_SPEED;
-    if(D) dy+=PLAYER_SPEED;
+    if(L){dx-=spd;me.facingLeft=true;}
+    if(R){dx+=spd;me.facingLeft=false;}
+    if(U) dy-=spd;
+    if(D) dy+=spd;
     if(dx||dy){
       const r=tryMove(me.x,me.y,dx,dy);
       if(r.moved){me.x=r.x;me.y=r.y;socket.emit('move',{x:me.x,y:me.y,facingLeft:me.facingLeft});}
@@ -494,10 +492,7 @@ function tick(){
 
 // ── INPUT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('keydown',e=>{
-  if(screen==='color'){
-    if(e.key==='Enter') enterGame();
-    return;
-  }
+  if(screen==='color'){if(e.key==='Enter')enterGame();return;}
   if(e.key==='/'&&!chatOpen){logout();return;}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)&&!chatOpen) e.preventDefault();
   if(!chatOpen&&(e.key==='t'||e.key==='T')){openChat();e.preventDefault();return;}
@@ -514,7 +509,6 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{keys[e.key]=false;});
 window.addEventListener('resize',resize);
 
-// Click / tap handler for color picker
 canvas.addEventListener('click',e=>{
   if(screen==='color'){
     const rect=canvas.getBoundingClientRect();
@@ -534,12 +528,17 @@ canvas.addEventListener('touchend',e=>{
 function openChat(){
   chatOpen=true;chatInputVal='';
   const inp=document.getElementById('mobileChatInput');
-  if(inp){inp.style.bottom='0';inp.style.pointerEvents='all';inp.value='';inp.focus();}
+  if(inp){
+    inp.value='';
+    inp.style.bottom='0';inp.style.pointerEvents='all';
+    // Small delay prevents iOS from not focusing
+    setTimeout(()=>inp.focus(),50);
+  }
 }
 function closeChat(){
   chatOpen=false;chatInputVal='';
   const inp=document.getElementById('mobileChatInput');
-  if(inp){inp.blur();inp.style.bottom='-200px';inp.style.pointerEvents='none';}
+  if(inp){inp.blur();inp.style.bottom='-200px';inp.style.pointerEvents='none';inp.value='';}
 }
 function sendChat(){
   const msg=chatInputVal.trim();
@@ -548,17 +547,27 @@ function sendChat(){
   closeChat();
 }
 
+// Mobile input — single source of truth: mobileInput drives chatInputVal only
 const mobileInput=document.getElementById('mobileChatInput');
 if(mobileInput){
-  mobileInput.addEventListener('input',e=>{chatInputVal=e.target.value.slice(0,CHAT_MAX);});
-  mobileInput.addEventListener('keydown',e=>{
-    if(e.key==='Enter'){sendChat();e.preventDefault();}
-    if(e.key==='Escape') closeChat();
+  // 'input' fires after every keystroke including autocorrect/autocomplete
+  mobileInput.addEventListener('input',e=>{
+    // Completely replace chatInputVal from the input field value
+    // This prevents the "reappearing characters" bug where keydown and input both fire
+    chatInputVal=e.target.value.slice(0,CHAT_MAX);
   });
-  mobileInput.addEventListener('blur',()=>setTimeout(()=>{if(chatOpen)closeChat();},200));
+  mobileInput.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();sendChat();}
+    if(e.key==='Escape') closeChat();
+    // Don't handle Backspace here — let the input field handle it naturally
+    // and the 'input' event will sync chatInputVal
+  });
+  mobileInput.addEventListener('blur',()=>{
+    setTimeout(()=>{if(chatOpen)closeChat();},300);
+  });
 }
 
-// Mobile dpad
+// D-pad
 function bindDpad(id,dir){
   const el=document.getElementById(id);if(!el) return;
   const on=()=>{mobileKeys[dir]=true;el.classList.add('pressed');};
@@ -610,13 +619,12 @@ async function init(){
   const auth=await(await fetch('/me')).json();
   if(!auth.ok){window.location.href='/login.html';return;}
   myUsername=auth.user.username;
-
   await preloadSprites();
   const d=await loadMap();
   me={x:d.spawnX||100,y:d.spawnY||100,facingLeft:false,chatMsg:null,chatTime:null,sprite:mySprite};
-
   screen='color';
-  tick();
+  lastTick=performance.now();
+  requestAnimationFrame(tick);
 }
 
 async function logout(){
