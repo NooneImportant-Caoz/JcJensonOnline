@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JcJensonOnline</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{width:100%;height:100%;overflow:hidden;background:#07070f;touch-action:none;}
+
+    #gameCanvas{
+      display:block;
+      position:absolute;
+      top:0;left:0;
+      image-rendering:pixelated;
+      image-rendering:crisp-edges;
+    }
+
+    /* ── MOBILE HUD ── */
+    #mobileHud{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:100;
+    }
+
+    /* D-pad — bottom left */
+    #dpad{
+      position:absolute;
+      bottom:28px;
+      left:24px;
+      width:132px;
+      height:132px;
+      pointer-events:all;
+    }
+    .dpad-btn{
+      position:absolute;
+      width:40px;height:40px;
+      background:rgba(0,255,231,0.12);
+      border:1px solid rgba(0,255,231,0.3);
+      border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      color:rgba(0,255,231,0.8);
+      font-size:18px;
+      user-select:none;
+      cursor:pointer;
+      transition:background .1s;
+    }
+    .dpad-btn:active,.dpad-btn.pressed{background:rgba(0,255,231,0.28);}
+    #dbUp   {top:0;   left:46px;}
+    #dbDown {bottom:0;left:46px;}
+    #dbLeft {top:46px;left:0;}
+    #dbRight{top:46px;right:0;}
+
+    /* Action buttons — bottom right */
+    #actionBtns{
+      position:absolute;
+      bottom:28px;
+      right:20px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:all;
+    }
+    .act-btn{
+      width:52px;height:52px;
+      background:rgba(10,10,20,0.75);
+      border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Orbitron',sans-serif;
+      font-size:0.55rem;
+      letter-spacing:0.1em;
+      user-select:none;
+      cursor:pointer;
+      flex-direction:column;
+      gap:2px;
+    }
+    .act-btn .icon{font-size:20px;line-height:1;}
+    #btnChat{border:1px solid rgba(0,255,231,0.4);color:rgba(0,255,231,0.9);}
+    #btnChat:active{background:rgba(0,255,231,0.15);}
+    #btnLogout{border:1px solid rgba(255,79,123,0.4);color:rgba(255,79,123,0.9);}
+    #btnLogout:active{background:rgba(255,79,123,0.15);}
+
+    /* Hidden chat input for mobile keyboard trigger */
+    #mobileChatInput{
+      position:fixed;
+      bottom:-200px;
+      left:0;
+      width:100%;
+      opacity:0;
+      pointer-events:none;
+      font-size:16px; /* prevents iOS zoom */
+    }
+
+    /* Only show mobile HUD on touch devices */
+    @media(hover:hover) and (pointer:fine){
+      #mobileHud{display:none;}
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="mobileHud">
+    <!-- D-PAD -->
+    <div id="dpad">
+      <div class="dpad-btn" id="dbUp"    >▲</div>
+      <div class="dpad-btn" id="dbLeft"  >◀</div>
+      <div class="dpad-btn" id="dbRight" >▶</div>
+      <div class="dpad-btn" id="dbDown"  >▼</div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div id="actionBtns">
+      <div class="act-btn" id="btnChat">
+        <span class="icon">💬</span>
+        CHAT
+      </div>
+      <div class="act-btn" id="btnLogout">
+        <span class="icon">⏏</span>
+        EXIT
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden input to trigger mobile keyboard for chat -->
+  <input id="mobileChatInput" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="off">
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

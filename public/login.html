@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>JcJensonOnline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0a0a0f;--panel:#10101a;--border:#1e2a3a;--accent:#00ffe7;--accent2:#ff4f7b;--text:#c8d8e8;--muted:#445566;--glow:0 0 18px rgba(0,255,231,0.35);}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(to bottom,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:999;}
+    body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,231,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,231,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+    .wrapper{position:relative;z-index:1;width:min(420px,94vw);}
+    .logo{text-align:center;margin-bottom:28px;}
+    .logo h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.3rem,5vw,1.8rem);font-weight:900;color:var(--accent);text-shadow:var(--glow);letter-spacing:0.05em;}
+    .logo .sub{font-size:0.68rem;color:var(--muted);letter-spacing:0.25em;margin-top:6px;text-transform:uppercase;}
+    .tabs{display:flex;border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
+    .tab{flex:1;padding:11px;text-align:center;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:0.15em;color:var(--muted);background:var(--panel);border:none;transition:all 0.2s;}
+    .tab.active{color:var(--accent);background:rgba(0,255,231,0.07);border-bottom:2px solid var(--accent);}
+    .panel{background:var(--panel);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:24px;}
+    .form-group{margin-bottom:14px;}
+    label{display:block;font-size:0.65rem;letter-spacing:0.2em;color:var(--muted);margin-bottom:5px;text-transform:uppercase;}
+    input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:4px;padding:10px 12px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:1rem;outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
+    input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(0,255,231,0.15);}
+    .btn{width:100%;padding:12px;background:transparent;border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:'Orbitron',sans-serif;font-size:0.72rem;letter-spacing:0.2em;cursor:pointer;margin-top:8px;transition:all 0.2s;text-transform:uppercase;-webkit-tap-highlight-color:transparent;}
+    .btn:hover,.btn:active{background:rgba(0,255,231,0.1);box-shadow:var(--glow);}
+    .msg{margin-top:12px;font-size:0.78rem;text-align:center;min-height:20px;color:var(--accent2);}
+    .msg.ok{color:var(--accent);}
+    .hidden{display:none;}
+    .corner{position:fixed;width:50px;height:50px;border-color:rgba(0,255,231,0.12);border-style:solid;}
+    .corner.tl{top:16px;left:16px;border-width:2px 0 0 2px;}
+    .corner.tr{top:16px;right:16px;border-width:2px 2px 0 0;}
+    .corner.bl{bottom:16px;left:16px;border-width:0 0 2px 2px;}
+    .corner.br{bottom:16px;right:16px;border-width:0 2px 2px 0;}
+    .blink{animation:blink 1.2s step-end infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+    @media(max-width:480px){.corner{display:none;}}
+  </style>
+</head>
+<body>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="wrapper">
+    <div class="logo">
+      <h1>JCJENSON<span class="blink">_</span></h1>
+      <div class="sub">Online // Access Terminal</div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="showTab('login')">LOGIN</button>
+      <button class="tab" id="tabReg" onclick="showTab('register')">REGISTER</button>
+    </div>
+    <div class="panel">
+      <div id="loginForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUser" placeholder="username" autocomplete="off" autocorrect="off" autocapitalize="off">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn" onclick="doLogin()">ENTER SYSTEM</button>
+        <div class="msg" id="loginMsg"></div>
+      </div>
+      <div id="registerForm" class="hidden">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="regUser" placeholder="choose a handle" autocomplete="off" autocorrect="off" autocapitalize="off">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPass" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn" onclick="doRegister()">REQUEST ACCESS</button>
+        <div class="msg" id="regMsg"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    fetch('/me').then(r=>r.json()).then(d=>{
+      if(d.ok&&d.user&&!d.user.is_admin) window.location.href='/game.html';
+    });
+    function showTab(tab){
+      document.getElementById('loginForm').classList.toggle('hidden',tab!=='login');
+      document.getElementById('registerForm').classList.toggle('hidden',tab!=='register');
+      document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+      document.getElementById('tabReg').classList.toggle('active',tab==='register');
+    }
+    async function doLogin(){
+      const username=document.getElementById('loginUser').value.trim();
+      const password=document.getElementById('loginPass').value;
+      const msg=document.getElementById('loginMsg');
+      msg.textContent='Connecting...';msg.className='msg';
+      const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+      const d=await r.json();
+      if(d.ok){
+        if(d.admin){
+          // Open control panel in a new tab, go to game as player
+          window.open('/admin.html','_blank');
+          msg.textContent='Admin logged in. Opening control panel...';msg.className='msg ok';
+          setTimeout(()=>window.location.href='/game.html',800);
+        } else {
+          msg.textContent='Access granted.';msg.className='msg ok';
+          setTimeout(()=>window.location.href='/game.html',500);
+        }
+      } else {
+        msg.textContent=d.msg;
+      }
+    }
+    async function doRegister(){
+      const username=document.getElementById('regUser').value.trim();
+      const email=document.getElementById('regEmail').value.trim();
+      const password=document.getElementById('regPass').value;
+      const msg=document.getElementById('regMsg');
+      msg.textContent='Sending...';msg.className='msg';
+      const r=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})});
+      const d=await r.json();
+      msg.textContent=d.msg;
+      if(d.ok)msg.className='msg ok';
+    }
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        if(!document.getElementById('loginForm').classList.contains('hidden'))doLogin();
+        else doRegister();
+      }
+    });
+  </script>
+</body>
+</html>
