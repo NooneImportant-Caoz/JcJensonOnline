@@ -8,77 +8,110 @@
     :root{--bg:#0a0a0f;--panel:#10101a;--border:#1e2a3a;--accent:#00ffe7;--accent2:#ff4f7b;--text:#c8d8e8;--muted:#445566;}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+    /* NAV */
     #nav{background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;flex-shrink:0;}
     .brand{font-family:'Orbitron',sans-serif;font-size:.72rem;letter-spacing:.2em;color:var(--accent);padding:12px 14px 12px 0;border-right:1px solid var(--border);margin-right:6px;}
-    .nav-tab{font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:.12em;color:var(--muted);padding:14px;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:color .15s;}
-    .nav-tab:hover{color:var(--text);}.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .nav-tab{font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:.12em;color:var(--muted);padding:14px;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;}
+    .nav-tab:hover{color:var(--text);}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
     .spacer{flex:1;}
     #logoutBtn{font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:.1em;padding:5px 10px;background:transparent;border:1px solid var(--accent2);border-radius:3px;color:var(--accent2);cursor:pointer;}
-    .tab-page{display:none;flex:1;overflow:hidden;}.tab-page.active{display:flex;}
 
-    /* MAP */
-    #page-map{flex-direction:row;}
-    #mapSidebar{width:250px;min-width:250px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+    .tab-page{display:none;flex:1;overflow:hidden;}
+    .tab-page.active{display:flex;}
+
+    /* ── MAP EDITOR ── */
+    #page-map{flex-direction:column;}
+    #mapEditorWrap{display:flex;flex:1;overflow:hidden;}
+
+    /* Left tile sidebar */
+    #tileSidebar{width:240px;min-width:240px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
     .sb-sec{border-bottom:1px solid rgba(30,42,58,.5);}
     .sb-hd{font-size:.57rem;letter-spacing:.18em;color:var(--muted);padding:7px 12px 5px;text-transform:uppercase;cursor:pointer;display:flex;justify-content:space-between;user-select:none;}
     .sb-hd:hover{color:var(--accent);}
-    .sb-bd{padding:5px 7px 7px;display:flex;flex-wrap:wrap;gap:4px;}.sb-bd.hidden{display:none;}
-    .tile-btn{width:42px;height:42px;border:2px solid rgba(255,255,255,.07);border-radius:4px;cursor:pointer;background:#0e0e18;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-    .tile-btn canvas{image-rendering:pixelated;image-rendering:crisp-edges;}
+    .sb-bd{padding:5px 7px 7px;display:flex;flex-wrap:wrap;gap:4px;}
+    .sb-bd.hidden{display:none;}
+
+    .tile-btn{width:40px;height:40px;border:2px solid rgba(255,255,255,.07);border-radius:4px;cursor:pointer;background:#0e0e18;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .tile-btn img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;}
     .tile-btn .tlbl{position:absolute;bottom:0;left:0;right:0;font-size:6px;text-align:center;background:rgba(0,0,0,.82);color:#bbb;white-space:nowrap;overflow:hidden;padding:1px 0;}
-    .tile-btn.sel{border-color:var(--accent);}.tile-btn.sel-prop{border-color:#ffcc44;}
-    .tool-btn{width:42px;height:42px;border:2px solid rgba(255,255,255,.07);border-radius:4px;cursor:pointer;background:#0e0e18;color:var(--muted);font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
-    .tool-btn:hover{border-color:var(--accent);color:var(--accent);}
-    .tool-btn.sel-erase{border-color:var(--accent2)!important;color:var(--accent2)!important;}
-    .tool-btn.sel-spawn{border-color:#88ff88!important;color:#88ff88!important;}
-    .tool-btn.sel-fill{border-color:#ffcc44!important;color:#ffcc44!important;}
+    .tile-btn.sel{border-color:var(--accent);}
+    .tile-btn.sel-prop{border-color:#ffcc44;}
+
+    /* Main map area */
     #mapMain{flex:1;display:flex;flex-direction:column;overflow:hidden;}
     #mapTopbar{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:7px;font-family:'Orbitron',sans-serif;font-size:.56rem;letter-spacing:.1em;flex-wrap:wrap;}
-    .ttl{color:var(--accent);flex:1;}#modeLabel{color:var(--muted);font-size:.56rem;}
+    .ttl{color:var(--accent);flex:1;}
+    #modeLabel{color:var(--muted);font-size:.56rem;min-width:120px;}
     .tbtn{padding:4px 9px;background:transparent;border:1px solid var(--accent);border-radius:3px;color:var(--accent);font-family:'Orbitron',sans-serif;font-size:.54rem;letter-spacing:.1em;cursor:pointer;}
-    .tbtn:hover{background:rgba(0,255,231,.08);}.tbtn.d{border-color:var(--accent2);color:var(--accent2);}
+    .tbtn:hover{background:rgba(0,255,231,.08);}
+    .tbtn.d{border-color:var(--accent2);color:var(--accent2);}
     .ginp{width:33px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:inherit;padding:2px 3px;text-align:center;font-size:.56rem;border-radius:2px;}
     #mapArea{flex:1;overflow:auto;background:#07070f;}
     #mapWrap{position:relative;display:inline-block;}
     #tileCanvas,#propCanvas,#overlayCanvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:crisp-edges;}
     #tileCanvas{z-index:1;}#propCanvas{z-index:2;pointer-events:none;}#overlayCanvas{z-index:3;}
 
-    /* COLLISION */
+    /* ── TOOLS PANEL — bottom, separate from tiles ── */
+    #toolsBar{
+      background:var(--panel);
+      border-top:1px solid var(--border);
+      padding:8px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-shrink:0;
+    }
+    #toolsBar .tbar-label{font-size:.55rem;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-right:4px;}
+    .tool-btn{width:40px;height:40px;border:2px solid rgba(255,255,255,.1);border-radius:6px;cursor:pointer;background:#0e0e18;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;position:relative;}
+    .tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .tool-btn.sel{border-color:var(--accent)!important;color:var(--accent)!important;background:rgba(0,255,231,0.08)!important;}
+    .tool-btn.sel-erase{border-color:var(--accent2)!important;color:var(--accent2)!important;background:rgba(255,79,123,0.08)!important;}
+    .tool-btn.sel-spawn{border-color:#88ff88!important;color:#88ff88!important;background:rgba(136,255,136,0.08)!important;}
+    .tool-btn.sel-fill{border-color:#ffcc44!important;color:#ffcc44!important;background:rgba(255,204,68,0.08)!important;}
+    .tool-btn.sel-eyedrop{border-color:#cc88ff!important;color:#cc88ff!important;background:rgba(204,136,255,0.08)!important;}
+    .tool-btn.sel-clearprop{border-color:#ff8844!important;color:#ff8844!important;background:rgba(255,136,68,0.08)!important;}
+    .tool-tip{font-size:.58rem;color:var(--muted);margin-left:4px;}
+
+    /* ── COLLISION ── */
     #page-col{flex-direction:row;}
     #colSidebar{width:220px;min-width:220px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px;gap:8px;overflow-y:auto;}
     #colSidebar h3{font-family:'Orbitron',sans-serif;font-size:.63rem;letter-spacing:.15em;color:var(--accent);}
     #colSidebar p{font-size:.6rem;color:var(--muted);line-height:1.5;}
-    .col-entity{padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.68rem;margin-bottom:3px;transition:all .15s;}
+    .col-entity{padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.68rem;margin-bottom:3px;}
     .col-entity:hover,.col-entity.sel{border-color:var(--accent);color:var(--accent);}
     .col-entity .ce-sub{font-size:.57rem;color:var(--muted);}
     #colMain{flex:1;display:flex;flex-direction:column;min-width:0;}
     #colTopbar{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:8px;font-family:'Orbitron',sans-serif;font-size:.56rem;flex-shrink:0;}
-    #colContent{flex:1;overflow:hidden;display:flex;flex-direction:row;}
+    #colContent{flex:1;overflow:hidden;display:flex;}
     #colBoxPanel{flex:1;overflow-y:auto;padding:14px;min-width:0;}
-    #colPreviewPanel{width:300px;min-width:300px;background:#07070f;border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:20px;}
-    #colPreviewCanvas{image-rendering:pixelated;image-rendering:crisp-edges;border:1px solid var(--border);border-radius:4px;background:#0a0a12;max-width:260px;max-height:calc(100vh - 120px);}
+    #colPreviewPanel{width:280px;min-width:280px;background:#07070f;border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:16px;}
+    #colPreviewCanvas{image-rendering:pixelated;image-rendering:crisp-edges;border:1px solid var(--border);border-radius:4px;background:#0a0a12;max-width:248px;max-height:calc(100vh - 120px);}
     .col-box-row{display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(255,136,68,.08);border:1px solid rgba(255,136,68,.22);border-radius:4px;font-size:.65rem;margin-bottom:4px;}
     .col-box-row input{width:44px;background:transparent;border:1px solid var(--border);color:var(--text);font-family:inherit;padding:2px 3px;text-align:center;font-size:.62rem;}
-    .del-col{margin-left:auto;cursor:pointer;color:var(--accent2);font-size:.63rem;}.del-col:hover{text-decoration:underline;}
+    .del-col{margin-left:auto;cursor:pointer;color:var(--accent2);font-size:.63rem;}
 
-    /* LIVE */
+    /* ── LIVE ── */
     #page-live{flex-direction:row;}
     #liveLeft{width:290px;min-width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;}
     #liveRight{flex:1;display:flex;flex-direction:column;}
     .live-head{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.15em;color:var(--accent);padding:10px 14px;border-bottom:1px solid var(--border);}
     #playerList{flex:1;overflow-y:auto;padding:8px;}
     .player-card{background:rgba(0,255,231,.04);border:1px solid var(--border);border-radius:5px;padding:8px 11px;margin-bottom:5px;}
-    .pc-name{font-size:.74rem;color:var(--accent);margin-bottom:2px;}.pc-pos{font-size:.6rem;color:var(--muted);margin-bottom:5px;}
+    .pc-name{font-size:.74rem;color:var(--accent);margin-bottom:2px;}
+    .pc-pos{font-size:.6rem;color:var(--muted);margin-bottom:5px;}
     .pc-btns{display:flex;gap:5px;}
     .pc-btn{font-size:.55rem;font-family:'Orbitron',sans-serif;letter-spacing:.07em;padding:3px 8px;border-radius:3px;cursor:pointer;border:1px solid;background:transparent;}
     .pc-kick{color:var(--accent2);border-color:var(--accent2);}.pc-kick:hover{background:rgba(255,79,123,.1);}
     .pc-mute{color:#ffcc44;border-color:#ffcc44;}.pc-mute:hover{background:rgba(255,204,68,.1);}
     #liveChatLog{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:3px;}
     .lc-entry{font-size:.7rem;padding:4px 8px;background:rgba(255,255,255,.03);border-radius:3px;}
-    .lc-who{color:var(--accent);}.lc-time{color:var(--muted);font-size:.58rem;float:right;}
+    .lc-who{color:var(--accent);}
+    .lc-time{color:var(--muted);font-size:.58rem;float:right;}
     .empty{color:var(--muted);font-size:.68rem;padding:12px;text-align:center;}
 
-    /* USERS */
+    /* ── USERS ── */
     #page-users{flex-direction:column;overflow-y:auto;padding:20px;}
     #usersWrap{max-width:680px;}
     #usersWrap h2{font-family:'Orbitron',sans-serif;font-size:.78rem;letter-spacing:.2em;color:var(--accent);margin-bottom:14px;}
@@ -91,6 +124,7 @@
     .bv{color:var(--accent);border-color:var(--accent);}.bv:hover{background:rgba(0,255,231,.1);}
     .br{color:var(--accent2);border-color:var(--accent2);}.br:hover{background:rgba(255,79,123,.1);}
     .bd{color:#f66;border-color:#f66;}.bd:hover{background:rgba(255,60,60,.1);}
+
     #saveMsg{position:fixed;bottom:14px;right:14px;background:rgba(0,255,231,.12);border:1px solid var(--accent);border-radius:5px;padding:7px 13px;color:var(--accent);font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.14em;display:none;z-index:999;}
   </style>
 </head>
@@ -105,44 +139,54 @@
   <button id="logoutBtn" onclick="logout()">LOGOUT</button>
 </div>
 
-<!-- MAP -->
+<!-- ══ MAP EDITOR ══ -->
 <div id="page-map" class="tab-page active">
-  <div id="mapSidebar">
-    <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('toolBd')">▸ TOOLS</div>
-      <div class="sb-bd" id="toolBd">
-        <div class="tool-btn" id="eraserBtn" title="Erase" onclick="setTool('erase')">✕</div>
-        <div class="tool-btn" id="spawnBtn"  title="Set Spawn" onclick="setTool('spawn')">⊕</div>
-        <div class="tool-btn" id="fillBtn"   title="Fill area (drag)" onclick="setTool('fill')" style="font-size:14px">▦</div>
+  <div id="mapEditorWrap">
+    <!-- Left: tiles only -->
+    <div id="tileSidebar">
+      <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('floorBd')">▸ FLOORS</div><div class="sb-bd" id="floorBd"></div></div>
+      <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('borderBd')">▸ BORDERS</div><div class="sb-bd" id="borderBd"></div></div>
+      <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('wallBd')">▸ WALLS</div><div class="sb-bd" id="wallBd"></div></div>
+      <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('propBd')">▸ PROPS <span style="font-size:.5rem;color:#ffcc44">(above tiles)</span></div><div class="sb-bd" id="propBd"></div></div>
+    </div>
+
+    <!-- Right: map canvas -->
+    <div id="mapMain">
+      <div id="mapTopbar">
+        <span class="ttl">MAP EDITOR</span>
+        <span id="modeLabel">TOOL: DRAW</span>
+        <span style="color:var(--muted)">W<input id="gw" class="ginp" type="number" value="30" min="5" max="150">
+        H<input id="gh" class="ginp" type="number" value="22" min="5" max="100"></span>
+        <button class="tbtn" onclick="applyResize()">RESIZE</button>
+        <button class="tbtn" onclick="saveMap()">SAVE MAP</button>
+        <button class="tbtn d" onclick="clearMap()">CLEAR</button>
       </div>
+      <div id="mapArea"><div id="mapWrap">
+        <canvas id="tileCanvas"></canvas>
+        <canvas id="propCanvas"></canvas>
+        <canvas id="overlayCanvas"></canvas>
+      </div></div>
     </div>
-    <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('floorBd')">▸ FLOORS</div><div class="sb-bd" id="floorBd"></div></div>
-    <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('borderBd')">▸ BORDERS</div><div class="sb-bd" id="borderBd"></div></div>
-    <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('wallBd')">▸ WALLS</div><div class="sb-bd" id="wallBd"></div></div>
-    <div class="sb-sec"><div class="sb-hd" onclick="toggleSb('propBd')">▸ PROPS <span style="font-size:.5rem;color:#ffcc44">(above)</span></div><div class="sb-bd" id="propBd"></div></div>
   </div>
-  <div id="mapMain">
-    <div id="mapTopbar">
-      <span class="ttl">MAP EDITOR</span>
-      <span id="modeLabel">TOOL: —</span>
-      <span style="color:var(--muted)">W<input id="gw" class="ginp" type="number" value="30" min="5" max="150">
-      H<input id="gh" class="ginp" type="number" value="22" min="5" max="100"></span>
-      <button class="tbtn" onclick="applyResize()">RESIZE</button>
-      <button class="tbtn" onclick="saveMap()">SAVE MAP</button>
-      <button class="tbtn d" onclick="clearMap()">CLEAR</button>
-    </div>
-    <div id="mapArea"><div id="mapWrap">
-      <canvas id="tileCanvas"></canvas>
-      <canvas id="propCanvas"></canvas>
-      <canvas id="overlayCanvas"></canvas>
-    </div></div>
+
+  <!-- Bottom: tools panel — separate from tiles -->
+  <div id="toolsBar">
+    <span class="tbar-label">TOOLS</span>
+    <div class="tool-btn sel" id="btnDraw"     title="Draw (paint tiles/props)"   onclick="setTool('draw')">✏</div>
+    <div class="tool-btn"    id="btnErase"    title="Erase tile AND prop"          onclick="setTool('erase')">✕</div>
+    <div class="tool-btn"    id="btnFill"     title="Fill rectangle (drag)"        onclick="setTool('fill')" style="font-size:14px">▦</div>
+    <div class="tool-btn"    id="btnSpawn"    title="Set player spawn point"       onclick="setTool('spawn')">⊕</div>
+    <div class="tool-btn"    id="btnEyedrop"  title="Eyedropper: pick tile/prop"  onclick="setTool('eyedrop')" style="font-size:13px">🔍</div>
+    <div class="tool-btn"    id="btnClearProp" title="Erase PROP only (keep tile)" onclick="setTool('clearprop')" style="font-size:13px">⊠</div>
+    <span class="tool-tip" id="toolTip">Click to draw · Select a tile or prop first</span>
   </div>
 </div>
 
-<!-- COLLISION -->
+<!-- ══ COLLISION ══ -->
 <div id="page-col" class="tab-page">
   <div id="colSidebar">
-    <h3>COLLISION</h3>
-    <p>Select entity. Add boxes with x/y offset from sprite top-left, w/h in pixels.</p>
+    <h3>COLLISION EDITOR</h3>
+    <p>Select an entity. Add collision boxes. x/y = pixel offset from sprite top-left. w/h = size in pixels.</p>
     <div id="entityList"></div>
   </div>
   <div id="colMain">
@@ -153,7 +197,7 @@
     </div>
     <div id="colContent">
       <div id="colBoxPanel">
-        <div style="font-size:.6rem;color:var(--muted);margin-bottom:10px;">x/y = offset from sprite top-left · w/h = pixels</div>
+        <div style="font-size:.6rem;color:var(--muted);margin-bottom:10px;">Changes here affect all instances of this entity in the game.</div>
         <div id="colBoxList"></div>
       </div>
       <div id="colPreviewPanel"><canvas id="colPreviewCanvas"></canvas></div>
@@ -161,24 +205,27 @@
   </div>
 </div>
 
-<!-- LIVE -->
+<!-- ══ LIVE ══ -->
 <div id="page-live" class="tab-page">
   <div id="liveLeft">
     <div class="live-head">ONLINE PLAYERS</div>
     <div id="playerList"><div class="empty">No players online.</div></div>
   </div>
   <div id="liveRight">
-    <div class="live-head">CHAT LOG</div>
+    <div class="live-head">CHAT LOG <span style="float:right;font-size:.52rem;color:var(--muted);padding-top:2px">auto-refresh</span></div>
     <div id="liveChatLog"><div class="empty">No messages yet.</div></div>
   </div>
 </div>
 
-<!-- USERS -->
+<!-- ══ USERS ══ -->
 <div id="page-users" class="tab-page">
-  <div id="usersWrap"><h2>USER MANAGEMENT</h2><div id="userList"></div></div>
+  <div id="usersWrap">
+    <h2>USER MANAGEMENT</h2>
+    <div id="userList"></div>
+  </div>
 </div>
-<div id="saveMsg">SAVED ✓</div>
 
+<div id="saveMsg">SAVED ✓</div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
 fetch('/me').then(r=>r.json()).then(d=>{if(!d.ok||!d.user.is_admin)window.location.href='/login.html';});
@@ -214,7 +261,7 @@ const PROP_DEFS={
   Box1:     {file:'Box1.png',     w:1,h:1,color:'#C8843C'},
   BoxPile1: {file:'BoxPile1.png', w:1,h:2,color:'#B8743C',natW:32,natH:50,offsetY:14},
   Locker1:  {file:'Locker1.png',  w:1,h:2,color:'#aaaaaa'},
-  Locker2:  {file:'Locker2.png',  w:1,h:2,color:'#C8843C'},
+  Locker2:  {file:'Locker2.png',  w:1,h:2,color:'#C8843C',offsetY:16},
   Locker3:  {file:'Locker3.png',  w:1,h:2,color:'#888888',natW:32,natH:80},
   Table:    {file:'Table.png',    w:2,h:1,color:'#C8A050',natW:80,natH:48},
 };
@@ -223,11 +270,13 @@ const TS=32;
 let gridW=30,gridH=22;
 let tileMap=[],propMap=[];
 let spawnX=100,spawnY=100;
-let currentTool='';
+let currentTool='draw';
 let selectedTile=null,selectedProp=null;
-let isPainting=false,fillStart=null,fillEnd=null;
-let entityColliders={player:[{x:0,y:36,w:26,h:16}]};
+let isPainting=false;
+let fillStart=null,fillEnd=null;
+let entityColliders={player:[{x:0,y:0,w:26,h:52}]};
 let selectedEntity='player';
+const mutedState={};
 
 const tileCanvas=document.getElementById('tileCanvas');
 const propCanvas=document.getElementById('propCanvas');
@@ -275,48 +324,57 @@ function buildPalette(){
 }
 
 function makeTileBtn(name,def,isProp){
-  const btn=document.createElement('div');
-  btn.className='tile-btn';btn.title=name;btn.dataset.name=name;
-  const thumb=document.createElement('canvas');
-  thumb.width=40;thumb.height=40;thumb.style.width='40px';thumb.style.height='40px';
+  const btn=document.createElement('div');btn.className='tile-btn';btn.title=name;btn.dataset.name=name;
+  const thumb=document.createElement('canvas');thumb.width=38;thumb.height=38;thumb.style.cssText='width:38px;height:38px;image-rendering:pixelated;';
   const tctx=thumb.getContext('2d');pp(tctx);
   btn.appendChild(thumb);
   const lbl=document.createElement('div');lbl.className='tlbl';lbl.textContent=name;btn.appendChild(lbl);
   function drawThumb(){
-    pp(tctx);tctx.clearRect(0,0,40,40);
-    tctx.fillStyle=def.color||'#333';tctx.fillRect(0,0,40,40);
+    pp(tctx);tctx.clearRect(0,0,38,38);
+    tctx.fillStyle=def.color||'#333';tctx.fillRect(0,0,38,38);
     const i=imgCache[def.file];
     if(i&&i.complete&&i.naturalWidth>0){
-      const sc=Math.min(38/i.naturalWidth,38/i.naturalHeight,4);
+      const sc=Math.min(36/i.naturalWidth,36/i.naturalHeight,4);
       const dw=Math.round(i.naturalWidth*sc),dh=Math.round(i.naturalHeight*sc);
-      tctx.drawImage(i,Math.round((40-dw)/2),Math.round((40-dh)/2),dw,dh);
+      pp(tctx);tctx.drawImage(i,Math.round((38-dw)/2),Math.round((38-dh)/2),dw,dh);
     } else {
       tctx.font='6px monospace';tctx.fillStyle='rgba(255,255,255,.3)';tctx.textAlign='center';
-      tctx.fillText(name,20,22);tctx.textAlign='left';
+      tctx.fillText(name,19,21);tctx.textAlign='left';
     }
   }
   const img=getImg(def.file);
-  const origLoad=img.onload;
-  img.onload=function(){if(origLoad)origLoad.call(this);drawThumb();};
+  const origOnload=img.onload;
+  img.onload=()=>{imgCache[def.file]=img;drawThumb();redrawAll();};
   drawThumb();
   btn.onclick=()=>{
     document.querySelectorAll('.tile-btn').forEach(b=>b.classList.remove('sel','sel-prop'));
-    resetToolBtns();
-    if(isProp){selectedProp=name;selectedTile=null;currentTool='prop';btn.classList.add('sel-prop');setModeLabel('PROP: '+name);}
-    else{selectedTile=name;selectedProp=null;currentTool='tile';btn.classList.add('sel');setModeLabel('TILE: '+name);}
+    if(isProp){selectedProp=name;selectedTile=null;btn.classList.add('sel-prop');setModeLabel('PROP: '+name);}
+    else{selectedTile=name;selectedProp=null;btn.classList.add('sel');setModeLabel('TILE: '+name);}
+    // Auto-switch to draw tool when selecting a tile/prop
+    if(currentTool!=='fill') setTool('draw');
   };
   return btn;
 }
 
-function resetToolBtns(){document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('sel','sel-erase','sel-spawn','sel-fill'));}
+// ── TOOLS ─────────────────────────────────────────────────────────────────────
+const toolBtnMap={draw:'btnDraw',erase:'btnErase',fill:'btnFill',spawn:'btnSpawn',eyedrop:'btnEyedrop',clearprop:'btnClearProp'};
+const toolClsMap={draw:'sel',erase:'sel-erase',fill:'sel-fill',spawn:'sel-spawn',eyedrop:'sel-eyedrop',clearprop:'sel-clearprop'};
+const toolTips={
+  draw:'Click/drag to paint selected tile or prop',
+  erase:'Click/drag to erase tile AND prop at cell',
+  fill:'Drag to fill a rectangle with selected tile/prop',
+  spawn:'Click a cell to set player spawn point',
+  eyedrop:'Click a cell to pick its tile/prop as selected',
+  clearprop:'Click/drag to erase PROP only (keeps tile)',
+};
+
 function setTool(t){
-  currentTool=t;selectedTile=null;selectedProp=null;
-  document.querySelectorAll('.tile-btn').forEach(b=>b.classList.remove('sel','sel-prop'));
-  resetToolBtns();
-  const map={erase:'eraserBtn',spawn:'spawnBtn',fill:'fillBtn'};
-  const cls={erase:'sel-erase',spawn:'sel-spawn',fill:'sel-fill'};
-  if(map[t]) document.getElementById(map[t]).classList.add(cls[t]||'sel');
-  setModeLabel('TOOL: '+{erase:'ERASER',spawn:'SET SPAWN',fill:'FILL RECT (drag)'}[t]||t);
+  currentTool=t;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.className=b.className.replace(/sel\S*/g,'').trim());
+  const btn=document.getElementById(toolBtnMap[t]);
+  if(btn) btn.classList.add(toolClsMap[t]||'sel');
+  document.getElementById('toolTip').textContent=toolTips[t]||'';
+  setModeLabel('TOOL: '+t.toUpperCase());
 }
 function setModeLabel(t){document.getElementById('modeLabel').textContent=t;}
 
@@ -338,22 +396,17 @@ function applyResize(){
 function resizeCanvases(){
   const W=gridW*TS,H=gridH*TS;
   [tileCanvas,propCanvas,overlayCanvas].forEach(cv=>{cv.width=W;cv.height=H;pp(cv.getContext('2d'));});
-  document.getElementById('mapWrap').style.width=W+'px';
-  document.getElementById('mapWrap').style.height=H+'px';
+  document.getElementById('mapWrap').style.cssText=`width:${W}px;height:${H}px;`;
 }
 
-// ── DRAW ──────────────────────────────────────────────────────────────────────
+// ── DRAW MAP ──────────────────────────────────────────────────────────────────
 function redrawAll(){redrawTiles();redrawProps();redrawOverlay();}
 
 function drawSpr(ctx2,file,color,name,px,py,pw,ph){
   pp(ctx2);
   const img=imgCache[file];
   if(img&&img.complete&&img.naturalWidth>0){ctx2.drawImage(img,px,py,pw,ph);}
-  else{
-    ctx2.fillStyle=color||'#444';ctx2.fillRect(px,py,pw,ph);
-    ctx2.font='7px monospace';ctx2.fillStyle='rgba(255,255,255,.25)';ctx2.textAlign='center';
-    ctx2.fillText(name,px+pw/2,py+ph/2+3);ctx2.textAlign='left';
-  }
+  else{ctx2.fillStyle=color||'#444';ctx2.fillRect(px,py,pw,ph);ctx2.font='7px monospace';ctx2.fillStyle='rgba(255,255,255,.25)';ctx2.textAlign='center';ctx2.fillText(name,px+pw/2,py+ph/2+3);ctx2.textAlign='left';}
 }
 
 function redrawTiles(){
@@ -366,7 +419,6 @@ function redrawTiles(){
     drawSpr(tc,def.file,def.color,name,c*TS,r*TS,def.w*TS,def.h*TS);
   }
 }
-
 function redrawProps(){
   pp(pc);pc.clearRect(0,0,propCanvas.width,propCanvas.height);
   const drawn=new Set();
@@ -380,78 +432,89 @@ function redrawProps(){
     pc.strokeStyle='rgba(255,204,68,.2)';pc.lineWidth=1;pc.strokeRect(c*TS+.5,r*TS+.5,def.w*TS-1,def.h*TS-1);
   }
 }
-
 function redrawOverlay(){
   pp(oc);oc.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   const sc=Math.floor(spawnX/TS),sr=Math.floor(spawnY/TS);
-  oc.font='20px monospace';oc.textAlign='center';oc.fillStyle='rgba(136,255,136,.9)';
-  oc.fillText('⊕',sc*TS+TS/2,sr*TS+TS/2+7);oc.textAlign='left';
-  if(fillStart&&fillEnd){
+  oc.font='18px monospace';oc.textAlign='center';oc.fillStyle='rgba(136,255,136,.9)';
+  oc.fillText('⊕',sc*TS+TS/2,sr*TS+TS/2+6);oc.textAlign='left';
+  if(fillStart&&fillEnd&&currentTool==='fill'){
     const r0=Math.min(fillStart.r,fillEnd.r),r1=Math.max(fillStart.r,fillEnd.r);
     const c0=Math.min(fillStart.c,fillEnd.c),c1=Math.max(fillStart.c,fillEnd.c);
-    oc.fillStyle='rgba(255,204,68,0.15)';oc.fillRect(c0*TS,r0*TS,(c1-c0+1)*TS,(r1-r0+1)*TS);
+    oc.fillStyle='rgba(255,204,68,0.12)';oc.fillRect(c0*TS,r0*TS,(c1-c0+1)*TS,(r1-r0+1)*TS);
     oc.strokeStyle='#ffcc44';oc.lineWidth=1.5;oc.strokeRect(c0*TS+.5,r0*TS+.5,(c1-c0+1)*TS-1,(r1-r0+1)*TS-1);
   }
 }
 
 // ── PAINT ─────────────────────────────────────────────────────────────────────
-function getCellFromEvent(e){
-  const rect=overlayCanvas.getBoundingClientRect();
-  return{c:Math.floor((e.clientX-rect.left)/TS),r:Math.floor((e.clientY-rect.top)/TS)};
-}
+function getCell(e){const rect=overlayCanvas.getBoundingClientRect();return{c:Math.floor((e.clientX-rect.left)/TS),r:Math.floor((e.clientY-rect.top)/TS)};}
 
-// Place a single tile/prop at cell r,c
-function placeAt(r,c){
+function paintCell(r,c){
   if(r<0||r>=gridH||c<0||c>=gridW) return;
-  if(selectedTile){
-    const def=TILE_DEFS[selectedTile];if(!def) return;
-    for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)tileMap[nr][nc]=selectedTile;}
-    redrawTiles();
-  } else if(selectedProp){
-    const def=PROP_DEFS[selectedProp];if(!def) return;
-    for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)propMap[nr][nc]=selectedProp;}
+  if(currentTool==='draw'||currentTool==='fill'){
+    if(selectedTile){
+      const def=TILE_DEFS[selectedTile];if(!def) return;
+      for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)tileMap[nr][nc]=selectedTile;}
+      redrawTiles();
+    } else if(selectedProp){
+      const def=PROP_DEFS[selectedProp];if(!def) return;
+      // Only place if all cells are empty or same prop
+      for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){
+        const nr=r+dr,nc=c+dc;
+        if(nr<gridH&&nc<gridW) propMap[nr][nc]=selectedProp;
+      }
+      redrawProps();
+    }
+  } else if(currentTool==='erase'){
+    const tn=tileMap[r][c];
+    if(tn){const def=TILE_DEFS[tn];if(def)for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)tileMap[nr][nc]=null;}else tileMap[r][c]=null;}
+    const pn=propMap[r][c];
+    if(pn){const def=PROP_DEFS[pn];if(def)for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)propMap[nr][nc]=null;}else propMap[r][c]=null;}
+    redrawTiles();redrawProps();
+  } else if(currentTool==='clearprop'){
+    const pn=propMap[r][c];
+    if(pn){const def=PROP_DEFS[pn];if(def)for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)propMap[nr][nc]=null;}else propMap[r][c]=null;}
     redrawProps();
+  } else if(currentTool==='spawn'){
+    spawnX=c*TS+TS/2-13;spawnY=r*TS+TS/2-26;redrawOverlay();
+  } else if(currentTool==='eyedrop'){
+    // Pick tile or prop at this cell
+    const pn=propMap[r][c];
+    if(pn){
+      selectedProp=pn;selectedTile=null;
+      document.querySelectorAll('.tile-btn').forEach(b=>b.classList.remove('sel','sel-prop'));
+      const btn=document.querySelector(`.tile-btn[data-name="${pn}"]`);if(btn)btn.classList.add('sel-prop');
+      setModeLabel('PROP: '+pn);
+    } else {
+      const tn=tileMap[r][c];
+      if(tn){
+        selectedTile=tn;selectedProp=null;
+        document.querySelectorAll('.tile-btn').forEach(b=>b.classList.remove('sel','sel-prop'));
+        const btn=document.querySelector(`.tile-btn[data-name="${tn}"]`);if(btn)btn.classList.add('sel');
+        setModeLabel('TILE: '+tn);
+      }
+    }
+    setTool('draw'); // switch to draw after picking
   }
 }
 
-function eraseAt(r,c){
-  if(r<0||r>=gridH||c<0||c>=gridW) return;
-  const tn=tileMap[r][c];
-  if(tn){const def=TILE_DEFS[tn];if(def)for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)tileMap[nr][nc]=null;}else tileMap[r][c]=null;}
-  const pn=propMap[r][c];
-  if(pn){const def=PROP_DEFS[pn];if(def)for(let dr=0;dr<def.h;dr++) for(let dc=0;dc<def.w;dc++){const nr=r+dr,nc=c+dc;if(nr<gridH&&nc<gridW)propMap[nr][nc]=null;}else propMap[r][c]=null;}
-  redrawTiles();redrawProps();
-}
-
-// Fill rectangle with currently selected tile or prop
 function fillRect(r0,c0,r1,c1){
   const rMin=Math.max(0,Math.min(r0,r1)),rMax=Math.min(gridH-1,Math.max(r0,r1));
   const cMin=Math.max(0,Math.min(c0,c1)),cMax=Math.min(gridW-1,Math.max(c0,c1));
-  for(let r=rMin;r<=rMax;r++) for(let c=cMin;c<=cMax;c++) placeAt(r,c);
+  for(let r=rMin;r<=rMax;r++) for(let c=cMin;c<=cMax;c++) paintCell(r,c);
 }
 
 overlayCanvas.addEventListener('mousedown',e=>{
-  const{c,r}=getCellFromEvent(e);
-  if(currentTool==='fill'&&(selectedTile||selectedProp)){
-    fillStart={r,c};fillEnd={r,c};redrawOverlay();
-  } else if(currentTool==='erase'){
-    isPainting=true;eraseAt(r,c);
-  } else if(currentTool==='spawn'){
-    spawnX=c*TS+TS/2-16;spawnY=r*TS+TS/2-24;redrawOverlay();
-  } else if(selectedTile||selectedProp){
-    isPainting=true;placeAt(r,c);
-  }
+  const{c,r}=getCell(e);
+  if(currentTool==='fill'){fillStart={r,c};fillEnd={r,c};redrawOverlay();}
+  else{isPainting=true;paintCell(r,c);}
   e.preventDefault();
 });
 overlayCanvas.addEventListener('mousemove',e=>{
-  const{c,r}=getCellFromEvent(e);
+  const{c,r}=getCell(e);
   if(currentTool==='fill'&&fillStart){fillEnd={r,c};redrawOverlay();}
-  else if(isPainting){
-    if(currentTool==='erase') eraseAt(r,c);
-    else if(selectedTile||selectedProp) placeAt(r,c);
-  }
+  else if(isPainting) paintCell(r,c);
 });
-document.addEventListener('mouseup',e=>{
+document.addEventListener('mouseup',()=>{
   if(currentTool==='fill'&&fillStart&&fillEnd){
     fillRect(fillStart.r,fillStart.c,fillEnd.r,fillEnd.c);
     fillStart=null;fillEnd=null;redrawOverlay();
@@ -499,19 +562,18 @@ async function loadMapData(){
   resizeCanvases();redrawAll();
 }
 function clearMap(){if(!confirm('Clear map?'))return;initGridArrays();redrawAll();}
-function flash(txt){const m=document.getElementById('saveMsg');m.textContent=txt;m.style.display='block';setTimeout(()=>m.style.display='none',2000);}
+function flash(txt){const m=document.getElementById('saveMsg');m.textContent=txt;m.style.display='block';setTimeout(()=>m.style.display='none',2200);}
 
 // ── COLLISION EDITOR ──────────────────────────────────────────────────────────
 function buildEntityList(){
   const list=document.getElementById('entityList');list.innerHTML='';
-  addEntityItem(list,'player','Player (player1.png)','26×52px');
+  addEntityItem(list,'player','Player (player1–5)','26×52px');
   Object.entries(PROP_DEFS).forEach(([name,def])=>addEntityItem(list,name,name,`${def.w*TS}×${def.h*TS}px`));
   selectEntity(selectedEntity);
 }
 function addEntityItem(list,id,label,sub){
   const div=document.createElement('div');div.className='col-entity'+(id===selectedEntity?' sel':'');
-  div.dataset.entity=id;
-  div.innerHTML=`${label}<div class="ce-sub">${sub}</div>`;
+  div.dataset.entity=id;div.innerHTML=`${label}<div class="ce-sub">${sub}</div>`;
   div.onclick=()=>selectEntity(id);list.appendChild(div);
 }
 function selectEntity(id){
@@ -534,22 +596,17 @@ function renderColBoxList(){
     list.appendChild(row);
   });
 }
-function updateCol(i,field,val){if(!entityColliders[selectedEntity]) return;entityColliders[selectedEntity][i][field]=parseInt(val)||0;renderColPreview();}
+function updateCol(i,f,v){if(!entityColliders[selectedEntity])return;entityColliders[selectedEntity][i][f]=parseInt(v)||0;renderColPreview();}
 function deleteCol(i){entityColliders[selectedEntity].splice(i,1);renderColBoxList();renderColPreview();}
-function addColBox(){if(!entityColliders[selectedEntity])entityColliders[selectedEntity]=[];entityColliders[selectedEntity].push({x:0,y:0,w:26,h:16});renderColBoxList();renderColPreview();}
+function addColBox(){if(!entityColliders[selectedEntity])entityColliders[selectedEntity]=[];entityColliders[selectedEntity].push({x:0,y:0,w:26,h:52});renderColBoxList();renderColPreview();}
 
 function renderColPreview(){
-  const cv=document.getElementById('colPreviewCanvas');if(!cv) return;
+  const cv=document.getElementById('colPreviewCanvas');if(!cv)return;
   const ctx2=cv.getContext('2d');
   const file=selectedEntity==='player'?'player1.png':PROP_DEFS[selectedEntity]?.file;
   if(file&&!imgCache[file]){
-    const img=new Image();
-    img.onload=()=>{imgCache[file]=img;renderColPreview();};
-    img.onerror=()=>{imgCache[file]=null;renderColPreview();};
-    img.src=`/assets/${file}`;imgCache[file]=img;
-    cv.width=160;cv.height=100;pp(ctx2);ctx2.fillStyle='#111';ctx2.fillRect(0,0,160,100);
-    ctx2.font='10px monospace';ctx2.fillStyle='#445566';ctx2.textAlign='center';ctx2.fillText('loading…',80,54);ctx2.textAlign='left';
-    return;
+    const img=new Image();img.onload=()=>{imgCache[file]=img;renderColPreview();};img.onerror=()=>{imgCache[file]=null;renderColPreview();};img.src=`/assets/${file}`;imgCache[file]=img;
+    cv.width=160;cv.height=80;pp(ctx2);ctx2.fillStyle='#111';ctx2.fillRect(0,0,160,80);ctx2.font='10px monospace';ctx2.fillStyle='#445';ctx2.textAlign='center';ctx2.fillText('loading…',80,44);ctx2.textAlign='left';return;
   }
   const img=file?imgCache[file]:null;
   const loaded=img&&img.complete&&img.naturalWidth>0;
@@ -558,10 +615,11 @@ function renderColPreview(){
   else if(selectedEntity==='player'){nw=26;nh=52;}
   else{const def=PROP_DEFS[selectedEntity];nw=(def?.natW)||(def?def.w:1)*TS;nh=(def?.natH)||(def?def.h:1)*TS;}
   const panel=document.getElementById('colPreviewPanel');
-  const scale=Math.min(Math.max(80,panel.clientWidth-40)/nw,Math.max(80,panel.clientHeight-40)/nh,10);
+  const maxW=Math.max(80,panel.clientWidth-32),maxH=Math.max(80,panel.clientHeight-32);
+  const scale=Math.min(maxW/nw,maxH/nh,10);
   const dw=Math.max(1,Math.round(nw*scale)),dh=Math.max(1,Math.round(nh*scale));
   cv.width=dw;cv.height=dh;pp(ctx2);
-  for(let y=0;y<dh;y+=8) for(let x=0;x<dw;x+=8){ctx2.fillStyle=((x/8+y/8)%2===0)?'#111':'#191919';ctx2.fillRect(x,y,8,8);}
+  for(let y=0;y<dh;y+=8)for(let x=0;x<dw;x+=8){ctx2.fillStyle=((x/8+y/8)%2===0)?'#111':'#191919';ctx2.fillRect(x,y,8,8);}
   if(loaded){pp(ctx2);ctx2.drawImage(img,0,0,dw,dh);}
   else{ctx2.fillStyle='rgba(255,255,255,.05)';ctx2.fillRect(0,0,dw,dh);}
   (entityColliders[selectedEntity]||[]).forEach((box,i)=>{
@@ -603,22 +661,13 @@ function appendNewChat(chat){
   if(knownChatCount===0) el.innerHTML='';
   chat.slice(knownChatCount).forEach(m=>{
     const div=document.createElement('div');div.className='lc-entry';
-    const t=new Date(m.time).toLocaleTimeString();
-    div.innerHTML=`<span class="lc-who">${m.username}:</span> ${m.msg}<span class="lc-time">${t}</span>`;
+    div.innerHTML=`<span class="lc-who">${m.username}:</span> ${m.msg}<span class="lc-time">${new Date(m.time).toLocaleTimeString()}</span>`;
     el.appendChild(div);
   });
-  knownChatCount=chat.length;
-  el.scrollTop=el.scrollHeight;
+  knownChatCount=chat.length;el.scrollTop=el.scrollHeight;
 }
-async function kickPlayer(socketId,username){
-  if(!confirm(`Kick ${username}?`)) return;
-  await fetch('/admin/kick',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({socketId})});
-  setTimeout(refreshLive,500);
-}
-async function toggleMute(socketId,currentlyMuted){
-  await fetch('/admin/mute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({socketId,muted:!currentlyMuted})});
-  setTimeout(refreshLive,300);
-}
+async function kickPlayer(socketId,username){if(!confirm(`Kick ${username}?`))return;await fetch('/admin/kick',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({socketId})});setTimeout(refreshLive,500);}
+async function toggleMute(socketId,cur){await fetch('/admin/mute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({socketId,muted:!cur})});setTimeout(refreshLive,300);}
 
 // ── USERS ─────────────────────────────────────────────────────────────────────
 async function loadUsers(){

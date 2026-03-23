@@ -6,6 +6,7 @@ const bcrypt     = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const sqlite3    = require('sqlite3').verbose();
 const path       = require('path');
+const fs         = require('fs');
 
 const app    = express();
 const server = http.createServer(app);
@@ -14,10 +15,14 @@ const io     = new Server(server);
 const ADMIN_USER  = 'noone';
 const ADMIN_PASS  = 'NEONGUN';
 const ADMIN_EMAIL = 'newnoonehell@gmail.com';
-const PORT        = process.env.PORT || 3000;
-const SITE_URL    = process.env.SITE_URL || `http://localhost:${PORT}`;
+const PORT = process.env.PORT || 3000;
 
-const db = new sqlite3.Database('./game.db');
+// Persistent DB — on Render add env var DATA_DIR=/var/data and mount a disk there
+const DATA_DIR = process.env.DATA_DIR || '.';
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const DB_PATH = path.join(DATA_DIR, 'game.db');
+
+const db = new sqlite3.Database(DB_PATH);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,12 +32,9 @@ db.serialize(() => {
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS map (
     id INTEGER PRIMARY KEY DEFAULT 1,
-    data TEXT DEFAULT '[]',
-    props TEXT DEFAULT '[]',
-    spawnX INTEGER DEFAULT 100,
-    spawnY INTEGER DEFAULT 100,
-    colliders TEXT DEFAULT '[]',
-    entityColliders TEXT DEFAULT '{}'
+    data TEXT DEFAULT '[]', props TEXT DEFAULT '[]',
+    spawnX INTEGER DEFAULT 100, spawnY INTEGER DEFAULT 100,
+    colliders TEXT DEFAULT '[]', entityColliders TEXT DEFAULT '{}'
   )`);
   db.run(`INSERT OR IGNORE INTO map (id,data,props,spawnX,spawnY,colliders,entityColliders) VALUES (1,'[]','[]',100,100,'[]','{}')`);
 });
@@ -42,24 +44,19 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: { user: ADMIN_EMAIL, pass: process.env.GMAIL_APP_PASSWORD || '' }
 });
-
+transporter.verify(err => {
+  if (err) console.log('Email error:', err.message);
+  else console.log('Email ready');
+});
 function sendVerificationEmail(email, username) {
-  const adminLink = `${SITE_URL}/admin.html`;
   transporter.sendMail({
     from: `"JcJensonOnline" <${ADMIN_EMAIL}>`,
     to: ADMIN_EMAIL,
-    subject: `New Account Pending: ${username}`,
-    html: `
-      <h2>New user registered</h2>
-      <p><b>Username:</b> ${username}</p>
-      <p><b>Email:</b> ${email}</p>
-      <p><a href="${adminLink}" style="background:#00ffe7;color:#000;padding:8px 16px;text-decoration:none;border-radius:4px;font-family:monospace">
-        Open Admin Panel
-      </a></p>
-    `
-  }, err => {
-    if (err) console.log('Email error:', err.message);
-    else console.log('Verification email sent for:', username);
+    subject: `New Account: ${username}`,
+    html: `<h2>New registration</h2><p><b>Username:</b> ${username}</p><p><b>Email:</b> ${email}</p><a href="https://jcjensononline.onrender.com/admin.html">Admin Panel</a>`
+  }, (err, info) => {
+    if (err) console.log('Send error:', err.message);
+    else console.log('Email sent:', info.messageId);
   });
 }
 
@@ -67,29 +64,21 @@ function sendVerificationEmail(email, username) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: 'jcjenson_secret_2024',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
-}));
+app.use(session({ secret: 'jcjenson_2024', resave: false, saveUninitialized: false, cookie: { maxAge: 86400000 } }));
+app.get('/', (req, res) => res.redirect('/login.html'));
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 app.post('/register', async (req, res) => {
   const { username, password, email } = req.body;
-  if (!username || !password || !email)
-    return res.json({ ok: false, msg: 'All fields required.' });
-  if (username.toLowerCase() === 'noone')
-    return res.json({ ok: false, msg: 'That username is reserved.' });
+  if (!username || !password || !email) return res.json({ ok: false, msg: 'All fields required.' });
+  if (username.toLowerCase() === 'noone') return res.json({ ok: false, msg: 'That username is reserved.' });
   const hash = await bcrypt.hash(password, 10);
-  db.run(`INSERT INTO users (username,password,email,verified) VALUES (?,?,?,0)`,
-    [username, hash, email], function(err) {
-      if (err) return res.json({ ok: false, msg: 'Username already taken.' });
-      sendVerificationEmail(email, username);
-      res.json({ ok: true, msg: 'Account created! Waiting for admin verification.' });
-    });
+  db.run(`INSERT INTO users (username,password,email,verified) VALUES (?,?,?,0)`, [username, hash, email], function(err) {
+    if (err) return res.json({ ok: false, msg: 'Username already taken.' });
+    sendVerificationEmail(email, username);
+    res.json({ ok: true, msg: 'Account created! Waiting for admin verification.' });
+  });
 });
-
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -105,7 +94,6 @@ app.post('/login', (req, res) => {
     res.json({ ok: true, admin: false });
   });
 });
-
 app.post('/logout', (req, res) => { req.session.destroy(); res.json({ ok: true }); });
 app.get('/me', (req, res) => {
   if (req.session.user) res.json({ ok: true, user: req.session.user });
@@ -115,9 +103,8 @@ app.get('/me', (req, res) => {
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
   if (req.session.user?.is_admin) return next();
-  res.status(403).json({ ok: false, msg: 'Forbidden' });
+  res.status(403).json({ ok: false });
 }
-
 app.get('/admin/users', requireAdmin, (req, res) => {
   db.all(`SELECT id,username,email,verified,created_at FROM users ORDER BY created_at DESC`, [], (err, rows) => {
     res.json({ ok: true, users: rows || [] });
@@ -129,32 +116,22 @@ app.post('/admin/verify', requireAdmin, (req, res) => {
 app.delete('/admin/user/:id', requireAdmin, (req, res) => {
   db.run(`DELETE FROM users WHERE id=?`, [req.params.id], err => res.json({ ok: !err }));
 });
-
 app.get('/admin/live', requireAdmin, (req, res) => {
-  res.json({
-    ok: true,
-    players: Object.entries(players).map(([id, p]) => ({ id, ...p })),
-    chat: chatHistory.slice(-50)
-  });
+  res.json({ ok: true, players: Object.entries(players).map(([id, p]) => ({ id, ...p })), chat: chatHistory.slice(-50) });
 });
-
 app.post('/admin/kick', requireAdmin, (req, res) => {
   const { socketId } = req.body;
-  if (!players[socketId]) return res.json({ ok: false, msg: 'Player not found' });
+  if (!players[socketId]) return res.json({ ok: false });
   io.to(socketId).emit('kick');
   setTimeout(() => { const s = io.sockets.sockets.get(socketId); if (s) s.disconnect(true); }, 800);
   res.json({ ok: true });
 });
-
 app.post('/admin/mute', requireAdmin, (req, res) => {
   const { socketId, muted } = req.body;
-  if (players[socketId]) {
-    players[socketId].muted = !!muted;
-    io.to(socketId).emit('mute', { muted: !!muted });
-    res.json({ ok: true });
-  } else {
-    res.json({ ok: false, msg: 'Player not found' });
-  }
+  if (!players[socketId]) return res.json({ ok: false });
+  players[socketId].muted = !!muted;
+  io.to(socketId).emit('mute', { muted: !!muted });
+  res.json({ ok: true });
 });
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
@@ -166,12 +143,10 @@ app.get('/map', (req, res) => {
       props:           JSON.parse(row?.props           || '[]'),
       colliders:       JSON.parse(row?.colliders       || '[]'),
       entityColliders: JSON.parse(row?.entityColliders || '{}'),
-      spawnX:          row?.spawnX || 100,
-      spawnY:          row?.spawnY || 100
+      spawnX: row?.spawnX || 100, spawnY: row?.spawnY || 100
     });
   });
 });
-
 app.post('/map', requireAdmin, (req, res) => {
   const data            = JSON.stringify(req.body.data            || []);
   const props           = JSON.stringify(req.body.props           || []);
@@ -181,12 +156,7 @@ app.post('/map', requireAdmin, (req, res) => {
   db.run(`UPDATE map SET data=?,props=?,colliders=?,entityColliders=?,spawnX=?,spawnY=? WHERE id=1`,
     [data, props, colliders, entityColliders, spawnX, spawnY], err => {
       if (err) return res.json({ ok: false });
-      io.emit('mapUpdate', {
-        data: req.body.data || [], props: req.body.props || [],
-        colliders: req.body.colliders || [],
-        entityColliders: req.body.entityColliders || {},
-        spawnX, spawnY
-      });
+      io.emit('mapUpdate', { data: req.body.data || [], props: req.body.props || [], colliders: req.body.colliders || [], entityColliders: req.body.entityColliders || {}, spawnX, spawnY });
       res.json({ ok: true });
     });
 });
@@ -194,6 +164,7 @@ app.post('/map', requireAdmin, (req, res) => {
 // ── SOCKETS ───────────────────────────────────────────────────────────────────
 const players     = {};
 const chatHistory = [];
+const MAX_DELTA   = 6; // max pixels per update — prevents speed hacks
 
 io.on('connection', socket => {
   socket.on('join', (username, sprite) => {
@@ -201,29 +172,23 @@ io.on('connection', socket => {
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('playerJoined', { id: socket.id, ...players[socket.id] });
   });
-
   socket.on('move', pos => {
     if (!players[socket.id]) return;
-    // Clamp position to prevent speed hacks — max movement per tick is 8px
-    const prev = players[socket.id];
-    const dx = Math.abs(pos.x - prev.x);
-    const dy = Math.abs(pos.y - prev.y);
-    if (dx > 8 || dy > 8) return; // reject impossible moves
-    Object.assign(players[socket.id], { x: pos.x, y: pos.y, facingLeft: pos.facingLeft });
-    socket.broadcast.emit('playerMoved', { id: socket.id, x: pos.x, y: pos.y, facingLeft: pos.facingLeft });
+    const p = players[socket.id];
+    // Clamp movement delta to prevent speed hacks
+    const nx = p.x + Math.max(-MAX_DELTA, Math.min(MAX_DELTA, pos.x - p.x));
+    const ny = p.y + Math.max(-MAX_DELTA, Math.min(MAX_DELTA, pos.y - p.y));
+    p.x = nx; p.y = ny; p.facingLeft = pos.facingLeft;
+    socket.broadcast.emit('playerMoved', { id: socket.id, x: p.x, y: p.y, facingLeft: p.facingLeft });
   });
-
   socket.on('chat', msg => {
-    if (!players[socket.id]) return;
-    if (players[socket.id].muted) return;
-    const username = players[socket.id].username;
+    if (!players[socket.id] || players[socket.id].muted) return;
     const safe = String(msg).replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 80);
-    const entry = { id: socket.id, username, msg: safe, time: Date.now() };
+    const entry = { id: socket.id, username: players[socket.id].username, msg: safe, time: Date.now() };
     chatHistory.push(entry);
     if (chatHistory.length > 50) chatHistory.shift();
     io.emit('chat', entry);
   });
-
   socket.on('disconnect', () => {
     if (players[socket.id]) { io.emit('playerLeft', socket.id); delete players[socket.id]; }
   });

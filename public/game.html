@@ -7,126 +7,82 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{width:100%;height:100%;overflow:hidden;background:#07070f;touch-action:none;}
+    #gameCanvas{display:block;position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:crisp-edges;}
 
-    #gameCanvas{
-      display:block;
-      position:absolute;
-      top:0;left:0;
-      image-rendering:pixelated;
-      image-rendering:crisp-edges;
-    }
+    /* Mobile HUD — only on touch devices */
+    #mobileHud{position:fixed;inset:0;pointer-events:none;z-index:100;}
 
-    /* ── MOBILE HUD ── */
-    #mobileHud{
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      z-index:100;
-    }
-
-    /* D-pad — bottom left */
+    /* D-pad bottom-left, safe area aware */
     #dpad{
       position:absolute;
-      bottom:28px;
-      left:24px;
-      width:132px;
-      height:132px;
+      bottom:max(28px,env(safe-area-inset-bottom,28px));
+      left:max(20px,env(safe-area-inset-left,20px));
+      width:132px;height:132px;
       pointer-events:all;
     }
     .dpad-btn{
-      position:absolute;
-      width:40px;height:40px;
+      position:absolute;width:44px;height:44px;
       background:rgba(0,255,231,0.12);
-      border:1px solid rgba(0,255,231,0.3);
-      border-radius:8px;
+      border:1.5px solid rgba(0,255,231,0.35);
+      border-radius:10px;
       display:flex;align-items:center;justify-content:center;
-      color:rgba(0,255,231,0.8);
-      font-size:18px;
-      user-select:none;
-      cursor:pointer;
-      transition:background .1s;
+      color:rgba(0,255,231,0.85);font-size:20px;
+      user-select:none;cursor:pointer;
     }
-    .dpad-btn:active,.dpad-btn.pressed{background:rgba(0,255,231,0.28);}
-    #dbUp   {top:0;   left:46px;}
-    #dbDown {bottom:0;left:46px;}
-    #dbLeft {top:46px;left:0;}
-    #dbRight{top:46px;right:0;}
+    .dpad-btn.pressed{background:rgba(0,255,231,0.3);}
+    #dbUp   {top:0;   left:44px;}
+    #dbDown {bottom:0;left:44px;}
+    #dbLeft {top:44px;left:0;}
+    #dbRight{top:44px;right:0;}
 
-    /* Action buttons — bottom right */
+    /* Action buttons bottom-right */
     #actionBtns{
       position:absolute;
-      bottom:28px;
-      right:20px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
+      bottom:max(28px,env(safe-area-inset-bottom,28px));
+      right:max(16px,env(safe-area-inset-right,16px));
+      display:flex;flex-direction:column;gap:10px;
       pointer-events:all;
     }
     .act-btn{
-      width:52px;height:52px;
-      background:rgba(10,10,20,0.75);
-      border-radius:10px;
+      width:56px;height:56px;
+      background:rgba(10,10,20,0.8);
+      border-radius:12px;
       display:flex;align-items:center;justify-content:center;
-      font-family:'Orbitron',sans-serif;
-      font-size:0.55rem;
-      letter-spacing:0.1em;
-      user-select:none;
-      cursor:pointer;
-      flex-direction:column;
-      gap:2px;
+      font-family:'Orbitron',sans-serif;font-size:0.52rem;
+      letter-spacing:0.08em;user-select:none;cursor:pointer;
+      flex-direction:column;gap:3px;
     }
-    .act-btn .icon{font-size:20px;line-height:1;}
-    #btnChat{border:1px solid rgba(0,255,231,0.4);color:rgba(0,255,231,0.9);}
-    #btnChat:active{background:rgba(0,255,231,0.15);}
-    #btnLogout{border:1px solid rgba(255,79,123,0.4);color:rgba(255,79,123,0.9);}
-    #btnLogout:active{background:rgba(255,79,123,0.15);}
+    .act-btn .icon{font-size:22px;line-height:1;}
+    #btnChat  {border:1.5px solid rgba(0,255,231,0.45);color:rgba(0,255,231,0.9);}
+    #btnChat.active{background:rgba(0,255,231,0.2);}
+    #btnLogout{border:1.5px solid rgba(255,79,123,0.45);color:rgba(255,79,123,0.9);}
 
-    /* Hidden chat input for mobile keyboard trigger */
+    /* Hidden keyboard trigger */
     #mobileChatInput{
-      position:fixed;
-      bottom:-200px;
-      left:0;
-      width:100%;
-      opacity:0;
-      pointer-events:none;
-      font-size:16px; /* prevents iOS zoom */
+      position:fixed;bottom:-200px;left:0;width:100%;
+      opacity:0;pointer-events:none;font-size:16px;
     }
 
-    /* Only show mobile HUD on touch devices */
-    @media(hover:hover) and (pointer:fine){
-      #mobileHud{display:none;}
-    }
+    /* Hide on desktop */
+    @media(hover:hover) and (pointer:fine){#mobileHud{display:none;}}
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-
   <div id="mobileHud">
-    <!-- D-PAD -->
     <div id="dpad">
-      <div class="dpad-btn" id="dbUp"    >▲</div>
-      <div class="dpad-btn" id="dbLeft"  >◀</div>
-      <div class="dpad-btn" id="dbRight" >▶</div>
-      <div class="dpad-btn" id="dbDown"  >▼</div>
+      <div class="dpad-btn" id="dbUp">▲</div>
+      <div class="dpad-btn" id="dbLeft">◀</div>
+      <div class="dpad-btn" id="dbRight">▶</div>
+      <div class="dpad-btn" id="dbDown">▼</div>
     </div>
-
-    <!-- ACTION BUTTONS -->
     <div id="actionBtns">
-      <div class="act-btn" id="btnChat">
-        <span class="icon">💬</span>
-        CHAT
-      </div>
-      <div class="act-btn" id="btnLogout">
-        <span class="icon">⏏</span>
-        EXIT
-      </div>
+      <div class="act-btn" id="btnChat"><span class="icon">💬</span>CHAT</div>
+      <div class="act-btn" id="btnLogout"><span class="icon">⏏</span>EXIT</div>
     </div>
   </div>
-
-  <!-- Hidden input to trigger mobile keyboard for chat -->
-  <input id="mobileChatInput" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="off">
-
+  <input id="mobileChatInput" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>
 </body>
